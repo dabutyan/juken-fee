@@ -1132,7 +1132,10 @@ var DB = {
      "tiers": [
       35000,
       20000
-     ]
+     ],
+     "soloPrices": {
+      "英語4技能": 30000
+     }
     },
     "faculties": {
      "文化構想学部": [
@@ -1150,7 +1153,10 @@ var DB = {
      "tiers": [
       35000,
       20000
-     ]
+     ],
+     "soloPrices": {
+      "英語4技能": 30000
+     }
     },
     "faculties": {
      "文学部": [
@@ -4860,15 +4866,35 @@ function facList(m) {
 /* items: [{label, fac, fixed?, base?}] → rows [{name, fee, base}] */
 function priceItems(pricing, items) {
   pricing = pricing || { tiers: [0] };
-  var g = 0, per = {};
-  return items.map(function (it) {
+  var per = {};
+  function soloOf(it) {
+    if (pricing.soloPrices) {
+      for (var k in pricing.soloPrices) { if (String(it.label).indexOf(k) >= 0) return pricing.soloPrices[k]; }
+    }
+    return undefined;
+  }
+  var meta = items.map(function (it) {
     var tiers = (pricing.facultyTiers && pricing.facultyTiers[it.fac]) || pricing.tiers;
-    var base = (it.base !== undefined) ? it.base : tiers[0];
-    if (it.fixed !== undefined) return { name: it.label, fee: it.fixed, base: base };
-    var idx;
-    if (pricing.scope === 'global') { idx = g++; }
-    else { per[it.fac] = per[it.fac] || 0; idx = per[it.fac]++; }
-    return { name: it.label, fee: tierFee(tiers, idx), base: base };
+    var solo = soloOf(it);
+    return { it: it, tiers: tiers, solo: solo, sticker: (solo !== undefined ? solo : tiers[0]) };
+  });
+  if (pricing.scope === 'global') {
+    /* 定価の高い順を1出願目（=定価）とし、安い方を割引tierに回す。選択順に依存しない */
+    var order = meta.map(function (m, i) { return i; }).sort(function (a, b) { return meta[b].sticker - meta[a].sticker; });
+    var rank = {}; order.forEach(function (idx, r) { rank[idx] = r; });
+    return meta.map(function (m, i) {
+      if (m.it.fixed !== undefined) return { name: m.it.label, fee: m.it.fixed, base: m.sticker };
+      var idx = rank[i];
+      var fee = (idx === 0) ? m.sticker : tierFee(m.tiers, idx);
+      return { name: m.it.label, fee: fee, base: m.sticker };
+    });
+  }
+  return meta.map(function (m) {
+    if (m.it.fixed !== undefined) return { name: m.it.label, fee: m.it.fixed, base: m.sticker };
+    per[m.it.fac] = per[m.it.fac] || 0;
+    var idx = per[m.it.fac]++;
+    var fee = (idx === 0 && m.solo !== undefined) ? m.solo : tierFee(m.tiers, idx);
+    return { name: m.it.label, fee: fee, base: m.sticker };
   });
 }
 
