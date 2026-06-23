@@ -1885,22 +1885,36 @@ var DB = {
       "食品ビジネス学科",
       "国際共生学科",
       "環境災害マネジメント学科"
+     ],
+     "歯学部": [
+      "歯学科"
+     ],
+     "松戸歯学部": [
+      "歯学科"
      ]
     },
     "options": [
      {
       "key": "a",
       "label": "A個別",
-      "fee": 35000
+      "fee": 35000,
+      "facultyFee": {
+       "歯学部": 50000,
+       "松戸歯学部": 40000
+      }
      },
      {
       "key": "n",
       "label": "N全学",
       "fee": 18000,
-      "freeWith": "a"
+      "freeWith": "a",
+      "facultyFee": {
+       "歯学部": 24000,
+       "松戸歯学部": 18000
+      }
      }
     ],
-    "banner": "🎉 日大の最強割引ルール：同一学科で【A個別＋N全学統一】を同時出願すると、N全学の18,000円が0円になります！"
+    "banner": "🎉 日大の最強割引ルール：同一学科で【A個別＋N全学統一】を同時出願するとN全学が0円に！（歯学部はA個別50,000円・N全学24,000円、松戸歯学部はA個別40,000円・N全学18,000円。医学部はA個別なし＝N全学のみ60,000円）"
    },
    "N全学統一方式のみ": {
     "note": "1学科18,000円・割引なし（医学部のみ60,000円・歯学部のみ24,000円）。A個別方式を実施しない学部（芸術学部・医学部など）はこちらのみ対象。",
@@ -5051,18 +5065,19 @@ function buildRows(m) {
       var parts = key.split('|'); var fac = parts[0], dept = parts[1];
       m.options.forEach(function (o) {
         if (!chosen[o.key]) return;
+        var ofee = (o.facultyFee && o.facultyFee[fac] !== undefined) ? o.facultyFee[fac] : o.fee;
         var name = fac + '（' + dept + '）［' + o.label + '］';
         var fee, base;
         if (o.freeWith && chosen[o.freeWith]) {
           fee = 0;
-          base = (o.fee !== undefined) ? o.fee : (o.tiers ? o.tiers[0] : 0);
+          base = (ofee !== undefined) ? ofee : (o.tiers ? o.tiers[0] : 0);
           name += '（同時出願で0円）';
         } else if (o.tiers) {
           counters[o.key] = counters[o.key] || 0;
           fee = tierFee(o.tiers, counters[o.key]++);
           base = o.tiers[0];
         } else {
-          fee = o.fee; base = o.fee;
+          fee = ofee; base = ofee;
         }
         rows3.push({ name: name, fee: fee, base: base });
       });
