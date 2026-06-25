@@ -5343,10 +5343,11 @@ function isPicked(fac, dept, variant) {
 }
 function togglePick(fac, dept, variant) {
   var m = curMethod();
-  var idx = sel.picked.findIndex(function (p) { return p.fac === fac && p.dept === dept; });
-  var wasSameVariant = idx >= 0 && sel.picked[idx].variant === variant;
+  var idx = sel.picked.findIndex(function (p) {
+    return p.fac === fac && p.dept === dept && p.variant === variant;
+  });
   if (idx >= 0) sel.picked.splice(idx, 1);
-  if (idx < 0 || !wasSameVariant) {
+  else {
     /* group UI: singleOnly 学部は1学科のみ */
     if (m && m.ui === 'group' && m.rules && m.rules[fac] && m.rules[fac].singleOnly) {
       sel.picked = sel.picked.filter(function (p) { return p.fac !== fac; });
