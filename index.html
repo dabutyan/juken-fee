@@ -17,19 +17,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F7F6F2;
+    --bg: #F4F7FC;
     --surface: #FFFFFF;
-    --border: #E2E0D8;
-    --border-strong: #C8C5BA;
-    --text: #1A1916;
-    --text-secondary: #6B6860;
-    --text-tertiary: #9B9890;
-    --accent: #1A1916;
-    --accent-fg: #F7F6F2;
-    --green-bg: #EBF5EC;
-    --green-text: #1B5E20;
-    --chip-selected-bg: #1A1916;
-    --chip-selected-fg: #F7F6F2;
+    --border: #EDF0F5;
+    --border-strong: #D6DCE6;
+    --text: #16294A;
+    --text-secondary: #5B6679;
+    --text-tertiary: #8A94A6;
+    --accent: #2E63B8;
+    --accent-fg: #FFFFFF;
+    --green-bg: #E5F4EC;
+    --green-text: #157A47;
+    --chip-selected-bg: #2E63B8;
+    --chip-selected-fg: #FFFFFF;
     --radius: 12px;
     --radius-sm: 8px;
     --radius-pill: 100px;
@@ -46,25 +46,41 @@
   }
 
   header {
-    background: var(--accent);
-    color: var(--accent-fg);
-    padding: 20px 20px 16px;
+    background: #FFFFFF;
+    color: var(--text);
+    padding: 13px 18px;
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   header h1 {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: -0.3px;
-    margin-bottom: 2px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  header h1::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: var(--accent);
+    flex-shrink: 0;
   }
 
   header p {
     font-size: 11px;
-    opacity: 0.6;
-    font-weight: 400;
+    color: var(--text-tertiary);
+    font-weight: 500;
   }
 
   .main {
@@ -267,13 +283,44 @@
     border-bottom: 1px solid var(--border);
     margin-bottom: 10px;
   }
+
+  /* ヒーロー */
+  .hero { background: linear-gradient(160deg,#E9F1FC,var(--bg)); padding: 28px 20px 24px; text-align: center; border-radius: var(--radius); margin-bottom: 12px; }
+  .hero-kicker { font-size: 11px; font-weight: 500; color: var(--accent); letter-spacing: 0.5px; margin-bottom: 8px; }
+  .hero-h1 { font-size: 23px; font-weight: 700; color: var(--text); line-height: 1.4; letter-spacing: -0.3px; margin-bottom: 10px; }
+  .hero-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 18px; }
+  .hero-cta { display: block; width: 100%; background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; padding: 15px; border-radius: 12px; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; letter-spacing: 0.3px; }
+  .hero-cta:active { transform: scale(0.98); }
+  .hero-ctasub { font-size: 10px; color: var(--text-tertiary); margin-top: 9px; }
+  .trust { display: flex; justify-content: space-around; gap: 8px; padding: 14px 10px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; }
+  .trust-i { text-align: center; }
+  .trust-i .v { font-size: 16px; font-weight: 700; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .trust-i .l { font-size: 9px; color: var(--text-tertiary); margin-top: 1px; }
+  .feat-sec { margin-bottom: 12px; }
+  .feat-tt { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-bottom: 10px; }
+  .feat { display: flex; gap: 11px; align-items: flex-start; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; }
+  .feat-ic { width: 32px; height: 32px; border-radius: 9px; background: #EAF1FB; color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+  .feat-ic.g { background: var(--green-bg); color: var(--green-text); }
+  .feat-t { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .feat-s { font-size: 11px; color: var(--text-secondary); line-height: 1.55; }
+  /* 割引カード（結果） */
+  .save-card { background: #fff; border: 1px solid #CFE9D9; border-radius: 14px; padding: 18px; text-align: center; margin-top: 12px; }
+  .save-cap { font-size: 11px; color: var(--green-text); font-weight: 500; margin-bottom: 4px; }
+  .save-amt { font-size: 34px; font-weight: 700; color: var(--green-text); font-family: 'DM Mono', monospace; letter-spacing: -1.5px; line-height: 1.1; }
+  .save-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; }
+  /* シェア */
+  .share { display: flex; gap: 9px; margin-bottom: 12px; }
+  .share-btn { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 13px; border-radius: 11px; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; color: #fff; text-decoration: none; }
+  .share-btn:active { transform: scale(0.98); }
+  .share-x { background: #16294A; }
+  .share-l { background: #06C755; }
 </style>
 </head>
 <body>
 
 <header>
   <h1>受験料シミュレーター</h1>
-  <p>大学・入試方式・学部を選んで受験料を自動計算</p>
+  <p>保護者の方へ</p>
 </header>
 
 <div class="main" id="app"></div>
@@ -5406,6 +5453,23 @@ function renderFacultyFlat(m) {
 function render() {
   var html = '';
 
+  /* ヒーロー（初回のみ：大学未選択かつカート空） */
+  if (!S.univ && !cart.length) {
+    html += '<div class="hero">';
+    html += '<div class="hero-kicker">大学を選ぶだけ・登録不要</div>';
+    html += '<div class="hero-h1">あなたの受験、<br>いくらかかる？</div>';
+    html += '<div class="hero-sub">受験料は割引の使い方で数万円変わります。<br>公式データをもとに、正確に計算します。</div>';
+    html += '<button class="hero-cta" data-action="scrollStep1">受験料を計算する</button>';
+    html += '<div class="hero-ctasub">所要1分・スマホで完結</div>';
+    html += '</div>';
+    html += '<div class="trust"><div class="trust-i"><div class="v">29</div><div class="l">対応大学</div></div><div class="trust-i"><div class="v">2026</div><div class="l">年度公式準拠</div></div><div class="trust-i"><div class="v">無料</div><div class="l">登録不要</div></div></div>';
+    html += '<div class="feat-sec"><div class="feat-tt">できること</div>';
+    html += '<div class="feat"><div class="feat-ic">¥</div><div><div class="feat-t">受験料を自動計算</div><div class="feat-s">大学・方式・学部を選ぶだけ</div></div></div>';
+    html += '<div class="feat"><div class="feat-ic g">%</div><div><div class="feat-t">割引を見逃さない</div><div class="feat-s">同日0円など複雑なルールも自動で計算</div></div></div>';
+    html += '<div class="feat"><div class="feat-ic">≣</div><div><div class="feat-t">複数校をまとめて比較</div><div class="feat-s">受験リストで合計額がひと目で</div></div></div>';
+    html += '</div>';
+  }
+
   /* STEP 1 */
   html += '<div class="step-card' + (S.step === 1 ? ' active' : '') + '" id="step1">';
   html += '<div class="step-header"><div class="step-badge ' + (S.univ ? 'done' : 'active') + '">' + (S.univ ? '✓' : '1') + '</div>';
@@ -5508,7 +5572,8 @@ document.addEventListener('click', function (e) {
   if (!btn) return;
   var a = btn.getAttribute('data-action');
   var d = btn.dataset;
-  if (a === 'univ') selUniv(d.univ);
+  if (a === 'scrollStep1') scrollToId('step1');
+  else if (a === 'univ') selUniv(d.univ);
   else if (a === 'method') selMethod(d.method);
   else if (a === 'back1') back1();
   else if (a === 'back2') back2();
