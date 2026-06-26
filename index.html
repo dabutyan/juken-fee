@@ -5247,10 +5247,31 @@ var estimateForm = {
 };
 
 var ADMISSION_MASTER = {
-  "早稲田大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
-  "慶應義塾大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
-  "上智大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
-  "東京理科大学": { admissionFee: 300000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" }
+  "上智大学": { admissionFee: 200000, deadline: "2026-02-20", deadlineNote: "文系2/20、神・心理・看護・2次試験学科は3/2", admissionFeeDeferrable: false, deferment: "授業料等は3/16まで延納可", refundable: false, source: "2026入学手続要項" },
+  "中央大学": { admissionFee: 240000, deadline: "", deadlineNote: "方式ごとの入学手続期限（P.7）。日付要追加", admissionFeeDeferrable: false, deferment: "記載なし（修学支援対象者のみ猶予）", refundable: false, source: "2026要項" },
+  "慶應義塾大学": { admissionFee: 200000, deadline: "2026-03-02", deadlineNote: "薬3/2・文商3/3・理工経済3/4・法SFC看護医3/12", admissionFeeDeferrable: false, deferment: "延納者授業料等は3/24まで", refundable: false, source: "2026要項5-2" },
+  "明治大学": { admissionFee: 200000, deadline: "2026-02-26", deadlineNote: "理工2/26・農国際日本3/2・文総合数理3/3・法政経3/4・商経営情コミ3/5", admissionFeeDeferrable: false, deferment: "入学金除く学費は3/25まで延納可", refundable: false, source: "2026要項3" },
+  "日本大学": { admissionFee: 260000, admissionFeeNote: "医学部1,000,000円、歯学部・松戸歯学部600,000円、薬学部400,000円など学部で大きく異なる", deadline: "2026-02-16", deadlineNote: "方式別。二段階最終手続は3/11〜3/25。入学金額が学部で大きく異なる", admissionFeeDeferrable: false, deferment: "二段階手続で残金延納可", refundable: false, source: "2026要項" },
+  "早稲田大学": { admissionFee: 200000, deadline: "2026-02-18", deadlineNote: "学部別の第1次振込期間（文構文2/20〜・理工2/27〜・政経商社学3/2〜3/3〜 等）。登録料→入学金に振替", admissionFeeDeferrable: false, deferment: "第2次振込は3/24", refundable: false, source: "2026要項1-1" },
+  "法政大学": { admissionFee: 240000, deadline: "", deadlineNote: "学部別の一括手続締切。日付要追加", admissionFeeDeferrable: false, deferment: "授業料等は3/24まで延納可", refundable: false, source: "2026要項" },
+  "立教大学": { admissionFee: 200000, deadline: "2026-02-27", deadlineNote: "第1回2/27・第2回3/13・第3回3/24・第4回3/28（合格回で変動）", admissionFeeDeferrable: false, deferment: "残金は3/24まで", refundable: false, source: "2026要項1" },
+  "青山学院大学": { admissionFee: 200000, deadline: "2026-02-24", deadlineNote: "全学部日程例2/24。方式で変動", admissionFeeDeferrable: false, deferment: "入学金除く学費は3/16まで", refundable: null, source: "2026要項（入学金延納の明文なし）" },
+  "大東文化大学": { admissionFee: 230000, deadline: "2026-02-25", deadlineNote: "全学部3教科例2/25", admissionFeeDeferrable: true, defermentCondition: "国公立大学併願者に限り、入学金含む全額を国公立前期の合格発表翌日まで延納可", deferment: "上記条件付きで入学金ごと延納", refundable: false, source: "2026要項" },
+  "成城大学": { admissionFee: 200000, deadline: "2026-02-24", deadlineNote: "第1回2/24・第2回3/4・第3回3/11・第4回3/18", admissionFeeDeferrable: false, deferment: "第二期締切で残金（第1回は3/4）", refundable: false, source: "2026要項" },
+  "明治学院大学": { admissionFee: 200000, deadline: "2026-02-26", deadlineNote: "A日程・共テ前期2/26、繰上で3/10〜3/25", admissionFeeDeferrable: false, deferment: "仮入学金200,000を先納で残金延納する制度あり", refundable: false, source: "2026要項" },
+  "駒澤大学": { admissionFee: 35000, admissionFeeNote: "1次手続は『入学登録料35,000円』のみ（学費本体は2次手続）。捨て金が35,000で済む構造＝滑り止め優秀", deadline: "2026-02-26", deadlineNote: "一般2月/共テ前期は合格発表〜2/26、2次3/6。共テ中期3/6一括・後期3/17一括", admissionFeeDeferrable: false, deferment: "2次で学費納入", refundable: false, source: "2026要項" },
+  "獨協大学": { admissionFee: "", deadline: "2026-02-20", deadlineNote: "第1次2/12〜2/20、第2次2/27〜3/5。入学金額未取得", admissionFeeDeferrable: false, deferment: "3/31までの辞退で入学金以外返還", refundable: false, source: "2026要項", todo: "入学金額を要取得" },
+  "専修大学": { admissionFee: "", deadline: "2026-02-20", deadlineNote: "前期共テは2/13〜2/20。4期分納可（意味の確認要）。入学金額未取得", admissionFeeDeferrable: false, deferment: "4期分納", refundable: null, source: "2026要項", todo: "入学金額・分納の中身を要取得" },
+  "工学院大学": { admissionFee: "", deadline: "2026-02-20", deadlineNote: "S/A/英外/共テ前期は第1段階2/20、B3/5、M/共テ後期3/25一括。第2段階3/11。入学金額未取得", admissionFeeDeferrable: false, deferment: "国公立併願者は残金を3/25まで延納", refundable: null, source: "2026要項", todo: "入学金額を要取得" },
+  "芝浦工業大学": { admissionFee: "", deadline: "2026-02-20", deadlineNote: "共テ前期/前期A/前期Bは発表2/14、第1次2/20、第2次3/13。入学金額未取得", admissionFeeDeferrable: false, deferment: "第2次で納入", refundable: null, source: "2026要項", todo: "入学金額を要取得" },
+  "学習院大学": { admissionFee: "", deadline: "2026-02-27", deadlineNote: "文・理2/27、法経・国際社会科学3/2。入学金額未取得", admissionFeeDeferrable: false, deferment: "授業料等は3/18まで延納可", refundable: false, source: "2026要項", todo: "入学金額を要取得" },
+  "成蹊大学": { admissionFee: "", deadline: "", deadlineNote: "入学金納入で残金を3/23まで延納可。入学金額・締切未取得", admissionFeeDeferrable: false, deferment: "残金は3/23まで", refundable: null, source: "2026要項", todo: "入学金額・締切を要取得" },
+  "帝京大学": { admissionFee: "", deadline: "", deadlineNote: "納入金の延期は一切不可。3/31までの辞退で入学金以外返還。入学金額・学部別額未取得", admissionFeeDeferrable: false, deferment: "延納一切不可", refundable: false, source: "2026要項", todo: "入学金額（学部別）・締切を要取得" },
+  "東京理科大学": { admissionFee: 300000, admissionFeeNote: "夜間主は150,000", deadline: "", deadlineNote: "締切日要追加", admissionFeeDeferrable: false, deferment: "国公立併願者は残金を3/25まで延納", refundable: false, source: "2026要項", todo: "締切日を要取得" },
+  "東京電機大学": { admissionFee: 250000, admissionFeeNote: "夜間主は130,000", deadline: "", deadlineNote: "締切日要追加", admissionFeeDeferrable: false, deferment: "入学金は延納不可、授業料等は3/25まで延納可", refundable: false, source: "2026要項", todo: "締切日を要取得" },
+  "武蔵大学": { admissionFee: 240000, deadline: "", deadlineNote: "締切日要追加", admissionFeeDeferrable: false, deferment: "入学金以外は3/31まで返還可", refundable: false, source: "2026要項", todo: "締切日を要取得" },
+  "亜細亜大学": { admissionFee: 150000, deadline: "", deadlineNote: "締切日要追加", admissionFeeDeferrable: false, deferment: "入学金以外は返還可", refundable: false, source: "2026要項", todo: "締切日を要取得" },
+  "國學院大學": { admissionFee: 240000, deadline: "", deadlineNote: "締切日要追加", admissionFeeDeferrable: false, deferment: "要確認", refundable: null, source: "2026要項", todo: "締切日・延納制度を要取得" }
 };
 
 function resetSel() {
@@ -5303,10 +5324,13 @@ function seedCalendarForm() {
 }
 function admissionDefault(univ) {
   return ADMISSION_MASTER[univ] || {
-    admissionFee: 250000,
+    admissionFee: '',
+    deadline: '',
+    deadlineNote: '未照合。入学金額・締切は最新要項で必ず確認',
+    admissionFeeDeferrable: false,
     deferment: "unknown",
     defermentNote: "未照合。最新要項で必ず確認",
-    paymentDeadlineType: "要項で確認"
+    source: "未照合"
   };
 }
 function depositTotals() {
@@ -5317,7 +5341,6 @@ function depositTotals() {
     var fee = Number(s.admissionFee) || 0;
     var deadline = s.deadline ? new Date(s.deadline + 'T00:00:00') : null;
     var mustPayBefore = false;
-    if (s.deferment === 'no') mustPayBefore = true;
     if (favorite && deadline && deadline < favorite && s.deferment !== 'yes') mustPayBefore = true;
     if (mustPayBefore) prepay += fee;
     if (mustPayBefore) worst += fee;
@@ -5588,10 +5611,14 @@ function addSafety() {
   depositSim.safeties.push({
     univ: u,
     admissionFee: base.admissionFee,
-    deferment: base.deferment,
-    defermentNote: base.defermentNote,
-    deadline: '',
-    paymentDeadlineType: base.paymentDeadlineType
+    deferment: base.admissionFeeDeferrable ? 'yes' : 'no',
+    defermentText: base.deferment || '',
+    defermentNote: base.defermentCondition || base.defermentNote || base.deferment || '最新要項で必ず確認',
+    deadline: base.deadline || '',
+    deadlineNote: base.deadlineNote || '',
+    admissionFeeNote: base.admissionFeeNote || '',
+    source: base.source || '',
+    todo: base.todo || ''
   });
   depositSim.selectedUniv = '';
   render();
@@ -5892,16 +5919,23 @@ function renderDepositSimulator() {
   depositSim.safeties.forEach(function (s, i) {
     var deadline = s.deadline ? new Date(s.deadline + 'T00:00:00') : null;
     var fav = depositSim.favoriteDate ? new Date(depositSim.favoriteDate + 'T00:00:00') : null;
-    var warn = s.deferment === 'no' || (fav && deadline && deadline < fav && s.deferment !== 'yes');
+    var canJudge = !!(fav && deadline);
+    var warn = canJudge && deadline < fav && s.deferment !== 'yes';
     h += '<div style="margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">';
     h += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong style="font-size:12px;">' + esc(s.univ) + '</strong><button class="secondary-btn" data-action="removeSafety" data-idx="' + i + '">削除</button></div>';
     h += '<div class="mini-grid" style="margin-top:10px;"><div><label class="field-label">入学金</label><input class="form-input" type="number" data-safety-field="admissionFee" data-idx="' + i + '" value="' + escA(s.admissionFee) + '"></div>';
     h += '<div><label class="field-label">納入締切</label><input class="form-input" type="date" data-safety-field="deadline" data-idx="' + i + '" value="' + escA(s.deadline || '') + '"></div></div>';
-    h += '<div style="height:10px;"></div><label class="field-label">延納制度</label><select class="form-select" data-safety-field="deferment" data-idx="' + i + '">';
+    if (s.admissionFeeNote) h += '<div class="mini-muted" style="margin-top:6px;">入学金注記：' + esc(s.admissionFeeNote) + '</div>';
+    if (s.deadlineNote) h += '<div class="mini-muted" style="margin-top:6px;">締切注記：' + esc(s.deadlineNote) + '</div>';
+    h += '<div style="height:10px;"></div><label class="field-label">入学金そのものの延納</label><select class="form-select" data-safety-field="deferment" data-idx="' + i + '">';
     [['unknown','要項で確認'],['yes','延納できる'],['no','延納不可']].forEach(function (opt) { h += '<option value="' + opt[0] + '"' + (s.deferment === opt[0] ? ' selected' : '') + '>' + opt[1] + '</option>'; });
     h += '</select>';
-    h += '<div style="margin-top:8px;"><span class="risk-pill ' + (warn ? 'risk-warn' : 'risk-ok') + '">' + (warn ? '先に払う可能性' : '待てる可能性') + '</span></div>';
-    h += '<div class="mini-muted" style="margin-top:6px;">' + esc(s.defermentNote || '最新要項で必ず確認') + '</div></div>';
+    if (s.defermentText) h += '<div class="mini-muted" style="margin-top:6px;">延納制度：' + esc(s.defermentText) + '</div>';
+    h += '<div style="margin-top:8px;"><span class="risk-pill ' + (warn ? 'risk-warn' : 'risk-ok') + '">' + (warn ? '先に払う可能性' : (canJudge ? '待てる可能性' : '発表日・締切で判定')) + '</span></div>';
+    h += '<div class="mini-muted" style="margin-top:6px;">' + esc(s.defermentNote || '最新要項で必ず確認') + '</div>';
+    if (s.todo) h += '<div class="mini-muted" style="margin-top:6px;color:#B45309;">未取得：' + esc(s.todo) + '</div>';
+    if (s.source) h += '<div class="mini-muted" style="margin-top:6px;">出典：' + esc(s.source) + '</div>';
+    h += '</div>';
   });
   h += '<div style="margin-top:12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;">';
   h += '<div class="mini-row"><span>本命発表前に払う可能性がある入学金</span><strong>' + fmt(totals.prepay) + '</strong></div>';
