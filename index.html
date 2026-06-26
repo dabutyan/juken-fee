@@ -314,6 +314,14 @@
   .share-btn:active { transform: scale(0.98); }
   .share-x { background: #16294A; }
   .share-l { background: #06C755; }
+  body { padding-bottom: 72px; }
+  .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:20; display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--border); box-shadow:0 -4px 18px rgba(22,41,74,.06); }
+  .tabbtn { min-height:62px; border:0; background:#fff; color:var(--text-tertiary); font-family:'Noto Sans JP',sans-serif; font-size:11px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .tabbtn.active { color:var(--accent); font-weight:700; }
+  .tabico { font-size:18px; line-height:1; }
+  .tab-page-head { margin-bottom:12px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .tab-page-title { font-size:16px; font-weight:700; color:var(--text); }
+  .tab-page-sub { font-size:12px; color:var(--text-secondary); line-height:1.7; margin-top:5px; }
   .module-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
   .module-head { padding: 13px 16px; border-bottom: 1px solid var(--border); }
   .module-title { font-size: 13px; font-weight: 700; color: var(--text); }
@@ -5217,7 +5225,7 @@ var GROUPS = [
 ];
 
 /* ---------- state ---------- */
-var S = { step: 1, univ: null, method: null };
+var S = { tab: 'calc', step: 1, univ: null, method: null };
 var sel = {};
 var expanded = null;
 var cart = [];
@@ -5285,8 +5293,9 @@ function cartSchools() {
   return out;
 }
 function seedCalendarForm() {
-  if (calendarForm.seeded) return;
   var schools = cartSchools();
+  if (calendarForm.seeded && (calendarForm.schoolsText || !schools.length)) return;
+  if (!schools.length) return;
   calendarForm.schoolsText = schools.map(function (s) {
     return s.univ + ' / ' + s.method + ' / ' + s.label;
   }).join('\n');
@@ -5498,9 +5507,9 @@ function toggleFlatDept(fac, dept) {
 }
 
 /* ---------- navigation ---------- */
-function selUniv(u) { S.univ = u; S.method = null; S.step = 2; resetSel(); render(); scrollToId('step2'); }
-function selMethod(mName) { S.method = mName; S.step = 3; resetSel(); render(); scrollToId('step3'); }
-function back1() { S = { step: 1, univ: null, method: null }; resetSel(); render(); window.scrollTo(0, 0); }
+function selUniv(u) { S.tab = 'calc'; S.univ = u; S.method = null; S.step = 2; resetSel(); render(); scrollToId('step2'); }
+function selMethod(mName) { S.tab = 'calc'; S.method = mName; S.step = 3; resetSel(); render(); scrollToId('step3'); }
+function back1() { S = { tab: S.tab || 'calc', step: 1, univ: null, method: null }; resetSel(); render(); window.scrollTo(0, 0); }
 function back2() { S.method = null; S.step = 2; resetSel(); render(); scrollToId('step2'); }
 function scrollToId(id) {
   setTimeout(function () { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
@@ -5514,13 +5523,13 @@ function addToCart() {
   var total = rows.reduce(function (s, r) { return s + r.fee; }, 0);
   var base = rows.reduce(function (s, r) { return s + r.base; }, 0);
   cart.push({ univ: S.univ, method: S.method, rows: rows, total: total, base: base });
-  S = { step: 1, univ: null, method: null };
+  S = { tab: 'calc', step: 1, univ: null, method: null };
   resetSel();
   render();
   scrollToId('cart-section');
 }
 function removeCart(i) { cart.splice(i, 1); render(); }
-function resetAll() { cart = []; S = { step: 1, univ: null, method: null }; resetSel(); render(); window.scrollTo(0, 0); }
+function resetAll() { cart = []; S = { tab: S.tab || 'calc', step: 1, univ: null, method: null }; resetSel(); calendarForm.seeded = false; render(); window.scrollTo(0, 0); }
 function openCalendar() {
   seedCalendarForm();
   calendarFormOpen = true;
@@ -5595,6 +5604,12 @@ function removeSafety(i) {
 function printEstimate() {
   window.print();
 }
+function switchTab(tab) {
+  S.tab = tab || 'calc';
+  if (S.tab === 'reserve') seedCalendarForm();
+  render();
+  window.scrollTo(0, 0);
+}
 
 /* ============================================================
    RENDER
@@ -5618,6 +5633,23 @@ function facHeader(fac, count, isExp, action) {
 
 function bannerHtml(text) {
   return '<div style="margin:0 14px 12px;padding:10px 12px;background:#EBF5EC;border:1px solid #81C784;border-radius:8px;font-size:11px;color:#1B5E20;line-height:1.7;">' + text + '</div>';
+}
+function tabHead(icon, title, sub) {
+  return '<div class="tab-page-head"><div class="tab-page-title">' + icon + ' ' + esc(title) + '</div><div class="tab-page-sub">' + esc(sub) + '</div></div>';
+}
+function renderTabbar() {
+  var tabs = [
+    { key: 'calc', icon: '💰', label: '受験料' },
+    { key: 'deposit', icon: '🎓', label: '入学金' },
+    { key: 'estimate', icon: '📄', label: '見積もり' },
+    { key: 'reserve', icon: '📅', label: '予約' }
+  ];
+  var h = '<nav class="tabbar" aria-label="機能タブ">';
+  tabs.forEach(function (t) {
+    h += '<button class="tabbtn' + ((S.tab || 'calc') === t.key ? ' active' : '') + '" data-action="tab" data-tab="' + t.key + '"><span class="tabico">' + t.icon + '</span><span>' + t.label + '</span></button>';
+  });
+  h += '</nav>';
+  return h;
 }
 
 /* --- UI renderers (step3 body) --- */
@@ -5824,10 +5856,11 @@ function renderCalendarReservation() {
   h += '<div class="module-body">';
   if (!calendarFormOpen) {
     h += '<button class="primary-btn" data-action="openCalendar">予約する（無料）</button>';
-    h += '<div class="mini-muted" style="margin-top:8px;">計算済みの大学・学部・方式を自動でセットします。</div>';
+    h += '<div class="mini-muted" style="margin-top:8px;">' + (cart.length ? '計算済みの大学・学部・方式を自動でセットします。' : '💰受験料タブで計算した志望校が自動で入ります（手入力もOK）。') + '</div>';
   } else {
     h += '<label class="field-label">志望校リスト（編集可）</label>';
     h += '<textarea class="form-textarea" data-input="calendarSchools">' + esc(calendarForm.schoolsText) + '</textarea>';
+    if (!calendarForm.schoolsText) h += '<div class="mini-muted" style="margin-top:6px;">💰受験料タブで計算した志望校が自動で入ります（手入力もOK）。</div>';
     h += '<div style="height:10px;"></div><label class="field-label">ニックネーム（任意）</label>';
     h += '<input class="form-input" data-input="calendarNickname" value="' + escA(calendarForm.nickname) + '" placeholder="例：だぶちゃん">';
     h += '<label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-size:11px;color:var(--text-secondary);line-height:1.6;">';
@@ -5890,6 +5923,7 @@ function renderEstimate() {
   h += '<div style="margin:10px 0;"><a href="#" class="mini-muted">受験会場近くのホテル予約リンク（準備中）</a></div>';
   h += '<div class="estimate-sheet" id="estimate-sheet"><div class="estimate-title">受験費用 見積書</div><div class="estimate-date">作成日：' + esc(today) + '</div>';
   h += '<div class="mini-row"><span>受験料</span><strong>' + fmt(t.exam) + '</strong></div>';
+  if (!t.exam) h += '<div class="mini-muted" style="margin:-2px 0 8px;">💰 <button data-action="tab" data-tab="calc" style="border:0;background:none;color:var(--accent);font:inherit;font-weight:700;padding:0;cursor:pointer;">受験料タブ</button>で計算すると自動で入ります。</div>';
   h += '<div class="mini-row"><span>交通費</span><strong>' + fmt(t.travel) + '</strong></div>';
   h += '<div class="mini-row"><span>宿泊費</span><strong>' + fmt(t.lodging) + '</strong></div>';
   h += '<div class="mini-row"><span>入学金リスク</span><strong>' + fmt(t.deposit) + '</strong></div>';
@@ -5904,6 +5938,23 @@ function renderEstimate() {
 /* --- step cards --- */
 function render() {
   var html = '';
+  var tab = S.tab || 'calc';
+
+  if (tab !== 'calc') {
+    if (tab === 'deposit') {
+      html += tabHead('🎓', '入学金シミュレーター', '本命発表前に払う可能性がある入学金を概算します。');
+      html += renderDepositSimulator();
+    } else if (tab === 'estimate') {
+      html += tabHead('📄', '総額見積もり', '受験料から宿泊費・入学金まで、親に見せやすい形でまとめます。');
+      html += renderEstimate();
+    } else if (tab === 'reserve') {
+      html += tabHead('📅', '受験カレンダー予約', '要項公開後、あなたの志望校に合わせた締切リマインドをLINEで受け取る予約です。');
+      html += renderCalendarReservation();
+    }
+    html += renderTabbar();
+    document.getElementById('app').innerHTML = html;
+    return;
+  }
 
   /* ヒーロー（初回のみ：大学未選択かつカート空） */
   if (!S.univ && !cart.length) {
@@ -6013,11 +6064,9 @@ function render() {
     html += '<div style="margin-bottom:12px;padding:14px 16px;background:#06C755;border-radius:var(--radius);text-align:center;">';
     html += '<p style="font-size:12px;color:#fff;margin-bottom:8px;font-weight:500;">📅 製品版で日程管理・書類チェックも！</p>';
     html += '<a href="https://lin.ee/R0rwEwt" target="_blank" style="display:inline-block;"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36" style="border:none;"></a></div>';
-    html += renderCalendarReservation();
-    html += renderDepositSimulator();
-    html += renderEstimate();
   }
 
+  html += renderTabbar();
   document.getElementById('app').innerHTML = html;
 }
 
@@ -6028,6 +6077,7 @@ document.addEventListener('click', function (e) {
   var a = btn.getAttribute('data-action');
   var d = btn.dataset;
   if (a === 'scrollStep1') scrollToId('step1');
+  else if (a === 'tab') switchTab(d.tab);
   else if (a === 'univ') selUniv(d.univ);
   else if (a === 'method') selMethod(d.method);
   else if (a === 'back1') back1();
