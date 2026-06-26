@@ -314,6 +314,26 @@
   .share-btn:active { transform: scale(0.98); }
   .share-x { background: #16294A; }
   .share-l { background: #06C755; }
+  .module-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+  .module-head { padding: 13px 16px; border-bottom: 1px solid var(--border); }
+  .module-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .module-sub { font-size: 11px; color: var(--text-secondary); line-height: 1.65; margin-top: 4px; }
+  .module-body { padding: 14px 16px; }
+  .field-label { display:block; font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+  .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 12px; padding: 10px 11px; }
+  .form-textarea { min-height: 96px; resize: vertical; line-height: 1.6; }
+  .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mini-row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .mini-row:last-child { border-bottom:none; }
+  .mini-muted { color: var(--text-secondary); font-size: 11px; line-height: 1.6; }
+  .primary-btn { width:100%; padding:13px; border:none; border-radius:10px; background:var(--accent); color:var(--accent-fg); font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+  .secondary-btn { padding:9px 11px; border:1px solid var(--border-strong); border-radius:8px; background:var(--bg); color:var(--text-secondary); font-family:'Noto Sans JP',sans-serif; font-size:12px; cursor:pointer; }
+  .risk-pill { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:700; }
+  .risk-ok { background:var(--green-bg); color:var(--green-text); }
+  .risk-warn { background:#FFF4CC; color:#7A4B00; }
+  .estimate-sheet { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; }
+  .estimate-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+  .estimate-date { font-size:10px; color:var(--text-tertiary); margin-bottom:12px; }
 </style>
 </head>
 <body>
@@ -5201,6 +5221,29 @@ var S = { step: 1, univ: null, method: null };
 var sel = {};
 var expanded = null;
 var cart = [];
+var GAS_ENDPOINT = '';
+var calendarFormOpen = false;
+var calendarSubmitting = false;
+var calendarStatus = '';
+var calendarForm = { nickname: '', schoolsText: '', agreed: true, seeded: false };
+var depositSim = {
+  favoriteDate: '',
+  selectedUniv: '',
+  safeties: []
+};
+var estimateForm = {
+  travel: 0,
+  hotelNights: 0,
+  hotelUnit: 12000,
+  tuition: 0
+};
+
+var ADMISSION_MASTER = {
+  "早稲田大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
+  "慶應義塾大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
+  "上智大学": { admissionFee: 200000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" },
+  "東京理科大学": { admissionFee: 300000, deferment: "unknown", defermentNote: "要項で延納可否を確認", paymentDeadlineType: "要項で確認" }
+};
 
 function resetSel() {
   sel = { picked: [], pair: {}, day: null, byDay: {}, counts: {}, byFac: {} };
@@ -5218,6 +5261,67 @@ function curMethod() { return (S.univ && S.method) ? DB[S.univ].methods[S.method
 function facList(m) {
   if (Array.isArray(m.faculties)) return null;
   return Object.keys(m.faculties || {});
+}
+function allUnivs() {
+  var seen = {};
+  var arr = [];
+  GROUPS.forEach(function (g) {
+    g.univs.forEach(function (u) {
+      if (DB[u] && !seen[u]) { seen[u] = true; arr.push(u); }
+    });
+  });
+  return arr;
+}
+function cartGrand() {
+  return cart.reduce(function (sum, c) { return sum + c.total; }, 0);
+}
+function cartSchools() {
+  var out = [];
+  cart.forEach(function (c) {
+    c.rows.forEach(function (r) {
+      out.push({ univ: c.univ, method: c.method, label: r.name });
+    });
+  });
+  return out;
+}
+function seedCalendarForm() {
+  if (calendarForm.seeded) return;
+  var schools = cartSchools();
+  calendarForm.schoolsText = schools.map(function (s) {
+    return s.univ + ' / ' + s.method + ' / ' + s.label;
+  }).join('\n');
+  calendarForm.seeded = true;
+}
+function admissionDefault(univ) {
+  return ADMISSION_MASTER[univ] || {
+    admissionFee: 250000,
+    deferment: "unknown",
+    defermentNote: "未照合。最新要項で必ず確認",
+    paymentDeadlineType: "要項で確認"
+  };
+}
+function depositTotals() {
+  var favorite = depositSim.favoriteDate ? new Date(depositSim.favoriteDate + 'T00:00:00') : null;
+  var prepay = 0;
+  var worst = 0;
+  depositSim.safeties.forEach(function (s) {
+    var fee = Number(s.admissionFee) || 0;
+    var deadline = s.deadline ? new Date(s.deadline + 'T00:00:00') : null;
+    var mustPayBefore = false;
+    if (s.deferment === 'no') mustPayBefore = true;
+    if (favorite && deadline && deadline < favorite && s.deferment !== 'yes') mustPayBefore = true;
+    if (mustPayBefore) prepay += fee;
+    if (mustPayBefore) worst += fee;
+  });
+  return { prepay: prepay, worst: worst };
+}
+function estimateTotals() {
+  var lodging = (Number(estimateForm.hotelNights) || 0) * (Number(estimateForm.hotelUnit) || 0);
+  var deposit = depositTotals().prepay;
+  var exam = cartGrand();
+  var travel = Number(estimateForm.travel) || 0;
+  var tuition = Number(estimateForm.tuition) || 0;
+  return { exam: exam, travel: travel, lodging: lodging, deposit: deposit, tuition: tuition, total: exam + travel + lodging + deposit + tuition };
 }
 
 /* ---------- pricing engine ---------- */
@@ -5417,6 +5521,80 @@ function addToCart() {
 }
 function removeCart(i) { cart.splice(i, 1); render(); }
 function resetAll() { cart = []; S = { step: 1, univ: null, method: null }; resetSel(); render(); window.scrollTo(0, 0); }
+function openCalendar() {
+  seedCalendarForm();
+  calendarFormOpen = true;
+  render();
+  scrollToId('calendar-reservation');
+}
+function submitCalendar() {
+  if (calendarSubmitting || !calendarForm.agreed) {
+    calendarStatus = 'リマインド同意にチェックを入れると予約できます。';
+    render();
+    return;
+  }
+  calendarSubmitting = true;
+  calendarStatus = '';
+  render();
+  var payload = {
+    type: 'calendar_reservation',
+    createdAt: new Date().toISOString(),
+    nickname: calendarForm.nickname,
+    schools: calendarForm.schoolsText.split(/\n+/).map(function (line) {
+      return line.trim();
+    }).filter(Boolean).map(function (line) {
+      var parts = line.split('/').map(function (p) { return p.trim(); });
+      return { univ: parts[0] || '', method: parts[1] || '', faculty: parts.slice(2).join(' / ') || line };
+    }),
+    agreedReminder: !!calendarForm.agreed,
+    source: 'result_screen'
+  };
+  var done = function (msg) {
+    calendarSubmitting = false;
+    calendarStatus = msg;
+    try { localStorage.setItem('jukenCalendarReservation', JSON.stringify(payload)); } catch (e) {}
+    render();
+    scrollToId('calendar-reservation');
+  };
+  if (!GAS_ENDPOINT) {
+    done('予約内容をこの端末に保存しました。GAS URL設定後は自動でスプレッドシート送信できます。LINEで「予約」と送ると確定しやすいです。');
+    return;
+  }
+  fetch(GAS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    return res.text();
+  }).then(function () {
+    done('予約完了！要項が出たらLINEで届きます。LINE友だち追加も忘れずに。');
+  }).catch(function () {
+    done('送信に失敗しました。内容はこの端末に保存しました。時間をおいて再送してください。');
+  });
+}
+function addSafety() {
+  var u = depositSim.selectedUniv;
+  if (!u) return;
+  var base = admissionDefault(u);
+  depositSim.safeties.push({
+    univ: u,
+    admissionFee: base.admissionFee,
+    deferment: base.deferment,
+    defermentNote: base.defermentNote,
+    deadline: '',
+    paymentDeadlineType: base.paymentDeadlineType
+  });
+  depositSim.selectedUniv = '';
+  render();
+  scrollToId('deposit-sim');
+}
+function removeSafety(i) {
+  depositSim.safeties.splice(i, 1);
+  render();
+}
+function printEstimate() {
+  window.print();
+}
 
 /* ============================================================
    RENDER
@@ -5638,6 +5816,91 @@ function renderFacultyFlat(m) {
   return h;
 }
 
+function renderCalendarReservation() {
+  seedCalendarForm();
+  var h = '<div class="module-card" id="calendar-reservation">';
+  h += '<div class="module-head"><div class="module-title">📅 受験カレンダー予約</div>';
+  h += '<div class="module-sub">出願日・締切、もう管理しなくてOK。要項が出たらあなたの受験校のカレンダーをLINEで届けます。</div></div>';
+  h += '<div class="module-body">';
+  if (!calendarFormOpen) {
+    h += '<button class="primary-btn" data-action="openCalendar">予約する（無料）</button>';
+    h += '<div class="mini-muted" style="margin-top:8px;">計算済みの大学・学部・方式を自動でセットします。</div>';
+  } else {
+    h += '<label class="field-label">志望校リスト（編集可）</label>';
+    h += '<textarea class="form-textarea" data-input="calendarSchools">' + esc(calendarForm.schoolsText) + '</textarea>';
+    h += '<div style="height:10px;"></div><label class="field-label">ニックネーム（任意）</label>';
+    h += '<input class="form-input" data-input="calendarNickname" value="' + escA(calendarForm.nickname) + '" placeholder="例：だぶちゃん">';
+    h += '<label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-size:11px;color:var(--text-secondary);line-height:1.6;">';
+    h += '<input type="checkbox" data-input="calendarAgreed" ' + (calendarForm.agreed ? 'checked' : '') + ' style="margin-top:3px;"> LINEで出願日・締切リマインドを受け取ることに同意します</label>';
+    h += '<button class="primary-btn" data-action="submitCalendar" ' + (calendarSubmitting ? 'disabled style="opacity:.6;"' : '') + '>' + (calendarSubmitting ? '送信中...' : 'LINE登録して予約を確定') + '</button>';
+    h += '<div style="margin-top:10px;text-align:center;"><a href="https://lin.ee/R0rwEwt" target="_blank" class="secondary-btn" style="display:inline-block;text-decoration:none;">LINE友だち追加</a></div>';
+    if (calendarStatus) h += '<div class="note-bar" style="margin:10px 0 0;">' + esc(calendarStatus) + '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function renderDepositSimulator() {
+  var totals = depositTotals();
+  var h = '<div class="module-card" id="deposit-sim">';
+  h += '<div class="module-head"><div class="module-title">入学金「捨て金」シミュレーター</div>';
+  h += '<div class="module-sub">本命の発表前に、滑り止めへいくら払う必要があるかを概算します。</div></div>';
+  h += '<div class="module-body">';
+  h += '<label class="field-label">本命校の合格発表日</label>';
+  h += '<input type="date" class="form-input" data-input="favoriteDate" value="' + escA(depositSim.favoriteDate) + '">';
+  h += '<div style="height:10px;"></div><label class="field-label">滑り止め校を追加</label>';
+  h += '<div style="display:flex;gap:8px;">';
+  h += '<select class="form-select" data-input="safetySelect"><option value="">大学を選択</option>';
+  allUnivs().forEach(function (u) { h += '<option value="' + escA(u) + '"' + (depositSim.selectedUniv === u ? ' selected' : '') + '>' + esc(u) + '</option>'; });
+  h += '</select><button class="secondary-btn" data-action="addSafety" style="white-space:nowrap;">追加</button></div>';
+  if (!depositSim.safeties.length) {
+    h += '<div class="mini-muted" style="margin-top:10px;">滑り止め校を追加すると、入学金・延納可否・納入日を編集できます。</div>';
+  }
+  depositSim.safeties.forEach(function (s, i) {
+    var deadline = s.deadline ? new Date(s.deadline + 'T00:00:00') : null;
+    var fav = depositSim.favoriteDate ? new Date(depositSim.favoriteDate + 'T00:00:00') : null;
+    var warn = s.deferment === 'no' || (fav && deadline && deadline < fav && s.deferment !== 'yes');
+    h += '<div style="margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">';
+    h += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong style="font-size:12px;">' + esc(s.univ) + '</strong><button class="secondary-btn" data-action="removeSafety" data-idx="' + i + '">削除</button></div>';
+    h += '<div class="mini-grid" style="margin-top:10px;"><div><label class="field-label">入学金</label><input class="form-input" type="number" data-safety-field="admissionFee" data-idx="' + i + '" value="' + escA(s.admissionFee) + '"></div>';
+    h += '<div><label class="field-label">納入締切</label><input class="form-input" type="date" data-safety-field="deadline" data-idx="' + i + '" value="' + escA(s.deadline || '') + '"></div></div>';
+    h += '<div style="height:10px;"></div><label class="field-label">延納制度</label><select class="form-select" data-safety-field="deferment" data-idx="' + i + '">';
+    [['unknown','要項で確認'],['yes','延納できる'],['no','延納不可']].forEach(function (opt) { h += '<option value="' + opt[0] + '"' + (s.deferment === opt[0] ? ' selected' : '') + '>' + opt[1] + '</option>'; });
+    h += '</select>';
+    h += '<div style="margin-top:8px;"><span class="risk-pill ' + (warn ? 'risk-warn' : 'risk-ok') + '">' + (warn ? '先に払う可能性' : '待てる可能性') + '</span></div>';
+    h += '<div class="mini-muted" style="margin-top:6px;">' + esc(s.defermentNote || '最新要項で必ず確認') + '</div></div>';
+  });
+  h += '<div style="margin-top:12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;">';
+  h += '<div class="mini-row"><span>本命発表前に払う可能性がある入学金</span><strong>' + fmt(totals.prepay) + '</strong></div>';
+  h += '<div class="mini-row"><span>最悪の場合の捨て金</span><strong>' + fmt(totals.worst) + '</strong></div>';
+  h += '<div class="mini-muted" style="margin-top:8px;">正確な締切日・延納条件は必ず最新の入試要項で確認してください。</div></div>';
+  h += '</div></div>';
+  return h;
+}
+
+function renderEstimate() {
+  var t = estimateTotals();
+  var today = new Date().toLocaleDateString('ja-JP');
+  var h = '<div class="module-card" id="estimate-tool"><div class="module-head"><div class="module-title">親に見せる総額見積もり</div>';
+  h += '<div class="module-sub">受験料・交通費・宿泊費・入学金をまとめて、家で相談しやすい見積書にします。</div></div><div class="module-body">';
+  h += '<div class="mini-grid"><div><label class="field-label">交通費</label><input class="form-input" type="number" data-input="estimateTravel" value="' + escA(estimateForm.travel) + '"></div>';
+  h += '<div><label class="field-label">初年度学費</label><input class="form-input" type="number" data-input="estimateTuition" value="' + escA(estimateForm.tuition) + '"></div>';
+  h += '<div><label class="field-label">宿泊数</label><input class="form-input" type="number" data-input="hotelNights" value="' + escA(estimateForm.hotelNights) + '"></div>';
+  h += '<div><label class="field-label">1泊単価</label><input class="form-input" type="number" data-input="hotelUnit" value="' + escA(estimateForm.hotelUnit) + '"></div></div>';
+  h += '<div style="margin:10px 0;"><a href="#" class="mini-muted">受験会場近くのホテル予約リンク（準備中）</a></div>';
+  h += '<div class="estimate-sheet" id="estimate-sheet"><div class="estimate-title">受験費用 見積書</div><div class="estimate-date">作成日：' + esc(today) + '</div>';
+  h += '<div class="mini-row"><span>受験料</span><strong>' + fmt(t.exam) + '</strong></div>';
+  h += '<div class="mini-row"><span>交通費</span><strong>' + fmt(t.travel) + '</strong></div>';
+  h += '<div class="mini-row"><span>宿泊費</span><strong>' + fmt(t.lodging) + '</strong></div>';
+  h += '<div class="mini-row"><span>入学金リスク</span><strong>' + fmt(t.deposit) + '</strong></div>';
+  h += '<div class="mini-row"><span>初年度学費</span><strong>' + fmt(t.tuition) + '</strong></div>';
+  h += '<div class="result-total" style="margin-top:12px;"><div class="result-total-label">概算合計</div><div class="result-total-price">' + fmt(t.total) + '</div></div>';
+  h += '<div class="mini-muted" style="margin-top:10px;">保存・共有前にLINE登録しておくと、要項更新後の締切リマインドも受け取れます。</div></div>';
+  h += '<div style="display:flex;gap:8px;margin-top:12px;"><button class="secondary-btn" data-action="printEstimate" style="flex:1;">印刷/PDF保存</button><a href="https://lin.ee/R0rwEwt" target="_blank" class="secondary-btn" style="flex:1;text-align:center;text-decoration:none;">LINE登録</a></div>';
+  h += '</div></div>';
+  return h;
+}
+
 /* --- step cards --- */
 function render() {
   var html = '';
@@ -5750,6 +6013,9 @@ function render() {
     html += '<div style="margin-bottom:12px;padding:14px 16px;background:#06C755;border-radius:var(--radius);text-align:center;">';
     html += '<p style="font-size:12px;color:#fff;margin-bottom:8px;font-weight:500;">📅 製品版で日程管理・書類チェックも！</p>';
     html += '<a href="https://lin.ee/R0rwEwt" target="_blank" style="display:inline-block;"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36" style="border:none;"></a></div>';
+    html += renderCalendarReservation();
+    html += renderDepositSimulator();
+    html += renderEstimate();
   }
 
   document.getElementById('app').innerHTML = html;
@@ -5777,6 +6043,51 @@ document.addEventListener('click', function (e) {
   else if (a === 'addToCart') addToCart();
   else if (a === 'removeCart') removeCart(parseInt(d.idx, 10));
   else if (a === 'resetAll') resetAll();
+  else if (a === 'openCalendar') openCalendar();
+  else if (a === 'submitCalendar') submitCalendar();
+  else if (a === 'addSafety') addSafety();
+  else if (a === 'removeSafety') removeSafety(parseInt(d.idx, 10));
+  else if (a === 'printEstimate') printEstimate();
+});
+
+document.addEventListener('input', function (e) {
+  var el = e.target;
+  var key = el.getAttribute('data-input');
+  var sf = el.getAttribute('data-safety-field');
+  if (key === 'calendarSchools') calendarForm.schoolsText = el.value;
+  else if (key === 'calendarNickname') calendarForm.nickname = el.value;
+  else if (key === 'favoriteDate') depositSim.favoriteDate = el.value;
+  else if (key === 'safetySelect') depositSim.selectedUniv = el.value;
+  else if (key === 'estimateTravel') estimateForm.travel = Number(el.value) || 0;
+  else if (key === 'estimateTuition') estimateForm.tuition = Number(el.value) || 0;
+  else if (key === 'hotelNights') estimateForm.hotelNights = Number(el.value) || 0;
+  else if (key === 'hotelUnit') estimateForm.hotelUnit = Number(el.value) || 0;
+  else if (sf) {
+    var i = parseInt(el.getAttribute('data-idx'), 10);
+    if (depositSim.safeties[i]) {
+      depositSim.safeties[i][sf] = (sf === 'admissionFee') ? (Number(el.value) || 0) : el.value;
+    }
+  }
+});
+
+document.addEventListener('change', function (e) {
+  var el = e.target;
+  var key = el.getAttribute('data-input');
+  var sf = el.getAttribute('data-safety-field');
+  if (key === 'calendarAgreed') calendarForm.agreed = !!el.checked;
+  else if (key === 'favoriteDate') { depositSim.favoriteDate = el.value; render(); }
+  else if (key === 'safetySelect') depositSim.selectedUniv = el.value;
+  else if (key === 'estimateTravel') { estimateForm.travel = Number(el.value) || 0; render(); }
+  else if (key === 'estimateTuition') { estimateForm.tuition = Number(el.value) || 0; render(); }
+  else if (key === 'hotelNights') { estimateForm.hotelNights = Number(el.value) || 0; render(); }
+  else if (key === 'hotelUnit') { estimateForm.hotelUnit = Number(el.value) || 0; render(); }
+  else if (sf) {
+    var i = parseInt(el.getAttribute('data-idx'), 10);
+    if (depositSim.safeties[i]) {
+      depositSim.safeties[i][sf] = (sf === 'admissionFee') ? (Number(el.value) || 0) : el.value;
+      render();
+    }
+  }
 });
 
 render();
