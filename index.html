@@ -318,7 +318,9 @@
   .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:20; display:grid; grid-template-columns:repeat(4,1fr); background:#fff; border-top:1px solid var(--border); box-shadow:0 -4px 18px rgba(22,41,74,.06); }
   .tabbtn { min-height:62px; border:0; background:#fff; color:var(--text-tertiary); font-family:'Noto Sans JP',sans-serif; font-size:11px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
   .tabbtn.active { color:var(--accent); font-weight:700; }
+  .tabbtn.locked:not(.active) { color:#9CA3AF; }
   .tabico { font-size:18px; line-height:1; }
+  .tab-lock { font-size:9px; line-height:1; padding:2px 5px; border-radius:999px; background:#F3F4F6; color:#6B7280; font-weight:700; }
   .tab-page-head { margin-bottom:12px; padding:16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
   .tab-page-title { font-size:16px; font-weight:700; color:var(--text); }
   .tab-page-sub { font-size:12px; color:var(--text-secondary); line-height:1.7; margin-top:5px; }
@@ -342,6 +344,26 @@
   .estimate-sheet { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; }
   .estimate-title { font-size:15px; font-weight:700; margin-bottom:3px; }
   .estimate-date { font-size:10px; color:var(--text-tertiary); margin-bottom:12px; }
+  .panic-block { background:#FFF7ED; border:1px solid #FED7AA; border-radius:var(--radius); padding:16px; margin-bottom:12px; }
+  .panic-title { font-size:16px; font-weight:700; color:#7C2D12; line-height:1.55; margin-bottom:10px; }
+  .panic-list { margin:0 0 12px; padding-left:18px; color:#7C2D12; font-size:12px; line-height:1.8; }
+  .panic-copy { color:#7C2D12; font-size:12px; line-height:1.8; margin-bottom:12px; }
+  .doc-item { display:flex; gap:10px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--border); }
+  .doc-item:last-child { border-bottom:none; }
+  .doc-check { margin-top:3px; width:18px; height:18px; flex-shrink:0; }
+  .doc-main { flex:1; min-width:0; }
+  .doc-title { display:block; font-size:12px; font-weight:700; color:var(--text); line-height:1.5; }
+  .doc-note { display:block; font-size:11px; color:var(--text-secondary); line-height:1.6; margin-top:2px; }
+  .lead-badge { display:inline-flex; align-items:center; margin-left:6px; padding:2px 6px; border-radius:999px; background:#FEE2E2; color:#991B1B; font-size:10px; font-weight:700; vertical-align:1px; }
+  .doc-progress { margin-top:10px; padding:10px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; font-size:12px; color:var(--text-secondary); }
+  .product-lock { background:#fff; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; padding:20px 16px; text-align:center; }
+  .product-lock-icon { width:54px; height:54px; margin:0 auto 12px; border-radius:18px; background:#EAF1FB; display:flex; align-items:center; justify-content:center; font-size:25px; }
+  .product-lock-kicker { display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px; background:#FFF4CC; color:#7A4B00; font-size:11px; font-weight:700; margin-bottom:10px; }
+  .product-lock-title { font-size:18px; font-weight:700; color:var(--text); line-height:1.5; margin-bottom:8px; }
+  .product-lock-copy { font-size:12px; color:var(--text-secondary); line-height:1.8; margin-bottom:14px; }
+  .product-lock-list { text-align:left; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .product-lock-list div { font-size:12px; color:var(--text); line-height:1.7; padding:3px 0; }
+  .product-lock-note { font-size:11px; color:var(--text-tertiary); line-height:1.7; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -5233,7 +5255,8 @@ var GAS_ENDPOINT = '';
 var calendarFormOpen = false;
 var calendarSubmitting = false;
 var calendarStatus = '';
-var calendarForm = { nickname: '', schoolsText: '', agreed: true, seeded: false };
+var calendarForm = { nickname: '', schoolsText: '', knownDeadlines: '', agreed: true, seeded: false };
+var docChecklist = {};
 var depositSim = {
   favoriteDate: '',
   selectedUniv: '',
@@ -5245,6 +5268,28 @@ var estimateForm = {
   hotelUnit: 12000,
   tuition: 0
 };
+
+var DOC_CHECKLIST_ITEMS = [
+  { id: 'transcript', title: '調査書（高校に発行依頼）', note: '締切2週間前には依頼を。発行に時間がかかります。', lead: true },
+  { id: 'photo', title: '証明写真（規定サイズ・データ/紙）', note: '大学ごとにサイズや背景、データ形式が違うことがあります。', lead: false },
+  { id: 'payment', title: '受験料の振込（出願期間内に）', note: 'Web出願だけで終わらず、入金完了まで必要な場合があります。', lead: false },
+  { id: 'english_score', title: '英語外部検定スコア（方式による）', note: '取り寄せ・送付に日数がかかるので早めに確認。', lead: true },
+  { id: 'essay_recommendation', title: '志望理由書・推薦書（総合型/推薦の場合）', note: '先生への依頼や下書き確認の時間を見込む必要があります。', lead: false },
+  { id: 'graduation_certificate', title: '卒業（見込）証明書（既卒など）', note: '既卒生や大学指定がある場合は早めに学校へ確認。', lead: false }
+];
+
+function loadDocChecklist() {
+  try {
+    var saved = localStorage.getItem('jukenDocChecklistV1');
+    docChecklist = saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    docChecklist = {};
+  }
+}
+function saveDocChecklist() {
+  try { localStorage.setItem('jukenDocChecklistV1', JSON.stringify(docChecklist)); } catch (e) {}
+}
+loadDocChecklist();
 
 var ADMISSION_MASTER = {
   "上智大学": { admissionFee: 200000, deadline: "2026-02-20", deadlineNote: "文系2/20、神・心理・看護・2次試験学科は3/2", admissionFeeDeferrable: false, deferment: "授業料等は3/16まで延納可", refundable: false, source: "2026入学手続要項" },
@@ -5578,8 +5623,10 @@ function submitCalendar() {
       var parts = line.split('/').map(function (p) { return p.trim(); });
       return { univ: parts[0] || '', method: parts[1] || '', faculty: parts.slice(2).join(' / ') || line };
     }),
+    knownDeadlines: calendarForm.knownDeadlines,
+    docChecklist: docChecklist,
     agreedReminder: !!calendarForm.agreed,
-    source: 'result_screen'
+    source: 'application_management_tab'
   };
   var done = function (msg) {
     calendarSubmitting = false;
@@ -5589,7 +5636,7 @@ function submitCalendar() {
     scrollToId('calendar-reservation');
   };
   if (!GAS_ENDPOINT) {
-    done('予約内容をこの端末に保存しました。GAS URL設定後は自動でスプレッドシート送信できます。LINEで「予約」と送ると確定しやすいです。');
+    done('予約内容をこの端末に保存しました。GAS URL設定後は自動でスプレッドシート送信できます。LINEで「出願管理」と送ると確定しやすいです。');
     return;
   }
   fetch(GAS_ENDPOINT, {
@@ -5599,10 +5646,15 @@ function submitCalendar() {
   }).then(function (res) {
     return res.text();
   }).then(function () {
-    done('予約完了！要項が出たらLINEで届きます。LINE友だち追加も忘れずに。');
+    done('予約完了！要項が出たら、あなたの志望校の出願締切・書類締切を順次LINEで届けます。');
   }).catch(function () {
     done('送信に失敗しました。内容はこの端末に保存しました。時間をおいて再送してください。');
   });
+}
+function toggleDocChecklist(id, checked) {
+  docChecklist[id] = !!checked;
+  saveDocChecklist();
+  render();
 }
 function addSafety() {
   var u = depositSim.selectedUniv;
@@ -5666,16 +5718,60 @@ function tabHead(icon, title, sub) {
 }
 function renderTabbar() {
   var tabs = [
-    { key: 'calc', icon: '💰', label: '受験料' },
-    { key: 'deposit', icon: '🎓', label: '入学金' },
-    { key: 'estimate', icon: '📄', label: '見積もり' },
-    { key: 'reserve', icon: '📅', label: '予約' }
+    { key: 'calc', icon: '💰', label: 'ツール' },
+    { key: 'deposit', icon: '🎓', label: '入学金', locked: true },
+    { key: 'estimate', icon: '📄', label: '見積もり', locked: true },
+    { key: 'reserve', icon: '📅', label: '出願管理', locked: true }
   ];
   var h = '<nav class="tabbar" aria-label="機能タブ">';
   tabs.forEach(function (t) {
-    h += '<button class="tabbtn' + ((S.tab || 'calc') === t.key ? ' active' : '') + '" data-action="tab" data-tab="' + t.key + '"><span class="tabico">' + t.icon + '</span><span>' + t.label + '</span></button>';
+    h += '<button class="tabbtn' + ((S.tab || 'calc') === t.key ? ' active' : '') + (t.locked ? ' locked' : '') + '" data-action="tab" data-tab="' + t.key + '"><span class="tabico">' + t.icon + '</span><span>' + t.label + '</span>' + (t.locked ? '<span class="tab-lock">製品版</span>' : '') + '</button>';
   });
   h += '</nav>';
+  return h;
+}
+
+function renderProductLock(tab) {
+  var specs = {
+    deposit: {
+      icon: '🎓',
+      title: '入学金シミュレーター',
+      sub: '本命発表前に払う可能性がある入学金を概算します。',
+      lead: '入学金・延納チェックは製品版で開放予定です',
+      body: 'ここから先は、製品版で有料提供する予定の機能です。今は無料の受験料ツールだけ使えます。',
+      items: ['入学金の捨て金リスクを自動計算', '延納制度・納入締切の整理', '滑り止め校ごとの支払いタイミング確認']
+    },
+    estimate: {
+      icon: '📄',
+      title: '総額見積もり',
+      sub: '受験料から宿泊費・入学金まで、親に見せやすい形でまとめます。',
+      lead: '親に見せる見積書は製品版で開放予定です',
+      body: 'ここから先は、製品版で有料提供する予定の機能です。今は無料の受験料ツールだけ使えます。',
+      items: ['受験料・交通費・宿泊費の総額化', '入学金リスク込みの見積書', 'PDF保存・共有用の整形']
+    },
+    reserve: {
+      icon: '📅',
+      title: '出願管理',
+      sub: '出願締切・書類のもらい忘れを防ぐためのチェックリストとLINEリマインダーです。',
+      lead: '出願管理は製品版で開放予定です',
+      body: 'ここから先は、製品版で有料提供する予定の機能です。今は無料の受験料ツールだけ使えます。',
+      items: ['出願締切・入金締切のリマインダー', '調査書などの書類チェックリスト', 'カレンダー出力・LINE通知']
+    }
+  };
+  var s = specs[tab] || specs.deposit;
+  var h = tabHead(s.icon, s.title, s.sub);
+  h += '<div class="product-lock">';
+  h += '<div class="product-lock-icon">🔒</div>';
+  h += '<div class="product-lock-kicker">製品版</div>';
+  h += '<div class="product-lock-title">' + esc(s.lead) + '</div>';
+  h += '<div class="product-lock-copy">' + esc(s.body) + '</div>';
+  h += '<div class="product-lock-list">';
+  s.items.forEach(function (item) { h += '<div>✓ ' + esc(item) + '</div>'; });
+  h += '</div>';
+  h += '<a href="https://lin.ee/R0rwEwt" target="_blank" class="primary-btn" style="display:block;text-align:center;text-decoration:none;">製品版の案内をLINEで受け取る</a>';
+  h += '<button class="secondary-btn" data-action="tab" data-tab="calc" style="width:100%;margin-top:8px;">無料ツールに戻る</button>';
+  h += '<div class="product-lock-note">無料で使えるのは、受験料・割引の計算ツールです。</div>';
+  h += '</div>';
   return h;
 }
 
@@ -5877,26 +5973,58 @@ function renderFacultyFlat(m) {
 
 function renderCalendarReservation() {
   seedCalendarForm();
-  var h = '<div class="module-card" id="calendar-reservation">';
-  h += '<div class="module-head"><div class="module-title">📅 受験カレンダー予約</div>';
-  h += '<div class="module-sub">出願日・締切、もう管理しなくてOK。要項が出たらあなたの受験校のカレンダーをLINEで届けます。</div></div>';
+  var checkedCount = DOC_CHECKLIST_ITEMS.filter(function (item) { return !!docChecklist[item.id]; }).length;
+  var h = '<div class="panic-block">';
+  h += '<div class="panic-title">😱 受験で本当に怖いのは「お金」じゃない。</div>';
+  h += '<ul class="panic-list">';
+  h += '<li>第一志望、出願締切を1日勘違いして “出せなかった”</li>';
+  h += '<li>調査書を学校に頼み忘れて、書類が “間に合わなかった”</li>';
+  h += '<li>滑り止めの入学金20万、本命に受かって “まるごと捨てた”</li>';
+  h += '</ul>';
+  h += '<div class="panic-copy">お金は戻らないだけ。でも出し忘れは、受験のチャンスそのものが消える。<br>締切も、書類の「もう頼んだ?」も、LINEが先回りで教えます。</div>';
+  h += '<a href="https://lin.ee/R0rwEwt" target="_blank" class="primary-btn" style="display:block;text-align:center;text-decoration:none;">LINEで出願アラートを受け取る</a>';
+  h += '</div>';
+
+  h += '<div class="module-card" id="doc-checklist">';
+  h += '<div class="module-head"><div class="module-title">📋 書類チェックリスト</div>';
+  h += '<div class="module-sub">私大一般出願でよく必要になるもの。チェック状態はこの端末に保存されます。</div></div>';
+  h += '<div class="module-body">';
+  DOC_CHECKLIST_ITEMS.forEach(function (item) {
+    var checked = !!docChecklist[item.id];
+    h += '<label class="doc-item">';
+    h += '<input class="doc-check" type="checkbox" data-doc-id="' + escA(item.id) + '" ' + (checked ? 'checked' : '') + '>';
+    h += '<span class="doc-main"><span class="doc-title">' + esc(item.title) + (item.lead ? '<span class="lead-badge">早めに依頼</span>' : '') + '</span>';
+    h += '<span class="doc-note">' + esc(item.note) + '</span></span>';
+    h += '</label>';
+  });
+  h += '<div class="doc-progress">チェック済み：' + checkedCount + ' / ' + DOC_CHECKLIST_ITEMS.length + '。調査書と英語スコアは特に先に動くと安心です。</div>';
+  h += '</div></div>';
+
+  h += '<div class="module-card" id="calendar-reservation">';
+  h += '<div class="module-head"><div class="module-title">📅 締切リマインダー予約</div>';
+  h += '<div class="module-sub">2027要項が出たら、あなたの志望校の出願締切・書類締切を順次LINEで届けます。</div></div>';
   h += '<div class="module-body">';
   if (!calendarFormOpen) {
-    h += '<button class="primary-btn" data-action="openCalendar">予約する（無料）</button>';
+    h += '<button class="primary-btn" data-action="openCalendar">LINEで締切リマインドを予約</button>';
     h += '<div class="mini-muted" style="margin-top:8px;">' + (cart.length ? '計算済みの大学・学部・方式を自動でセットします。' : '💰受験料タブで計算した志望校が自動で入ります（手入力もOK）。') + '</div>';
   } else {
     h += '<label class="field-label">志望校リスト（編集可）</label>';
     h += '<textarea class="form-textarea" data-input="calendarSchools">' + esc(calendarForm.schoolsText) + '</textarea>';
     if (!calendarForm.schoolsText) h += '<div class="mini-muted" style="margin-top:6px;">💰受験料タブで計算した志望校が自動で入ります（手入力もOK）。</div>';
+    h += '<div style="height:10px;"></div><label class="field-label">すでに知っている締切（任意）</label>';
+    h += '<textarea class="form-textarea" data-input="calendarDeadlines" placeholder="例：早稲田 政経 出願締切 1/20、調査書郵送 1/22">' + esc(calendarForm.knownDeadlines) + '</textarea>';
     h += '<div style="height:10px;"></div><label class="field-label">ニックネーム（任意）</label>';
     h += '<input class="form-input" data-input="calendarNickname" value="' + escA(calendarForm.nickname) + '" placeholder="例：だぶちゃん">';
     h += '<label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-size:11px;color:var(--text-secondary);line-height:1.6;">';
-    h += '<input type="checkbox" data-input="calendarAgreed" ' + (calendarForm.agreed ? 'checked' : '') + ' style="margin-top:3px;"> LINEで出願日・締切リマインドを受け取ることに同意します</label>';
-    h += '<button class="primary-btn" data-action="submitCalendar" ' + (calendarSubmitting ? 'disabled style="opacity:.6;"' : '') + '>' + (calendarSubmitting ? '送信中...' : 'LINE登録して予約を確定') + '</button>';
+    h += '<input type="checkbox" data-input="calendarAgreed" ' + (calendarForm.agreed ? 'checked' : '') + ' style="margin-top:3px;"> LINEで出願締切・書類締切リマインドを受け取ることに同意します</label>';
+    h += '<button class="primary-btn" data-action="submitCalendar" ' + (calendarSubmitting ? 'disabled style="opacity:.6;"' : '') + '>' + (calendarSubmitting ? '送信中...' : '締切リマインダーを予約') + '</button>';
     h += '<div style="margin-top:10px;text-align:center;"><a href="https://lin.ee/R0rwEwt" target="_blank" class="secondary-btn" style="display:inline-block;text-decoration:none;">LINE友だち追加</a></div>';
     if (calendarStatus) h += '<div class="note-bar" style="margin:10px 0 0;">' + esc(calendarStatus) + '</div>';
   }
   h += '</div></div>';
+  h += '<div style="margin-bottom:12px;padding:14px 16px;background:#06C755;border-radius:var(--radius);text-align:center;">';
+  h += '<p style="font-size:12px;color:#fff;margin-bottom:8px;font-weight:500;">締切3日前・書類の「もう頼んだ?」をLINEが通知</p>';
+  h += '<a href="https://lin.ee/R0rwEwt" target="_blank" style="display:inline-block;"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36" style="border:none;"></a></div>';
   return h;
 }
 
@@ -5975,16 +6103,7 @@ function render() {
   var tab = S.tab || 'calc';
 
   if (tab !== 'calc') {
-    if (tab === 'deposit') {
-      html += tabHead('🎓', '入学金シミュレーター', '本命発表前に払う可能性がある入学金を概算します。');
-      html += renderDepositSimulator();
-    } else if (tab === 'estimate') {
-      html += tabHead('📄', '総額見積もり', '受験料から宿泊費・入学金まで、親に見せやすい形でまとめます。');
-      html += renderEstimate();
-    } else if (tab === 'reserve') {
-      html += tabHead('📅', '受験カレンダー予約', '要項公開後、あなたの志望校に合わせた締切リマインドをLINEで受け取る予約です。');
-      html += renderCalendarReservation();
-    }
+    html += renderProductLock(tab);
     html += renderTabbar();
     document.getElementById('app').innerHTML = html;
     return;
@@ -6139,6 +6258,7 @@ document.addEventListener('input', function (e) {
   var key = el.getAttribute('data-input');
   var sf = el.getAttribute('data-safety-field');
   if (key === 'calendarSchools') calendarForm.schoolsText = el.value;
+  else if (key === 'calendarDeadlines') calendarForm.knownDeadlines = el.value;
   else if (key === 'calendarNickname') calendarForm.nickname = el.value;
   else if (key === 'favoriteDate') depositSim.favoriteDate = el.value;
   else if (key === 'safetySelect') depositSim.selectedUniv = el.value;
@@ -6158,6 +6278,8 @@ document.addEventListener('change', function (e) {
   var el = e.target;
   var key = el.getAttribute('data-input');
   var sf = el.getAttribute('data-safety-field');
+  var docId = el.getAttribute('data-doc-id');
+  if (docId) { toggleDocChecklist(docId, el.checked); return; }
   if (key === 'calendarAgreed') calendarForm.agreed = !!el.checked;
   else if (key === 'favoriteDate') { depositSim.favoriteDate = el.value; render(); }
   else if (key === 'safetySelect') depositSim.selectedUniv = el.value;
